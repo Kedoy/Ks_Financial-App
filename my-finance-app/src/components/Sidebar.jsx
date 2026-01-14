@@ -10,9 +10,9 @@ export default function Sidebar({ onNavigate, currentPage }) {
   // Полный список страниц
   const allPages = [
     { key: "expenses", label: "Главная", always: true },
-    { key: "analytics", label: "Аналитика", authOnly: true },
+    // { key: "analytics", label: "Аналитика", authOnly: true },
     { key: "test", label: "Тест", authOnly: true },
-    { key: "game", label: "Мини-игра", always: true },
+    { key: "game", label: "Кешбекни!", always: true },
     { key: "about", label: "О проекте", always: true }
   ];
 

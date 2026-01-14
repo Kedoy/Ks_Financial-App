@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import MultiSelect from "../components/MultiSelect";
 import NumberInput from "../components/NumberInput";
+import Result from "../components/Result";
 
 /**
  * TestPage
@@ -12,8 +13,6 @@ export default function TestPage({ days }) {
   const [stage, setStage] = useState("intro"); // "intro" | "test" | "result"
   const [step, setStep] = useState(0); // индекс текущего вопроса
   const [answers, setAnswers] = useState([]); // answers[step] = ответ
-  const [score, setScore] = useState(0);
-  const [showCorrect, setShowCorrect] = useState(false);
 
   // ----- Подготовка данных -----
   const allExpenses = useMemo(() => {
@@ -124,7 +123,7 @@ export default function TestPage({ days }) {
   const totalSteps = questions.length;
 
   // ----- UI helpers -----
-  const progressPercent = Math.round((step / totalSteps) * 100);
+  const progressPercent = Math.round(((step + 1) / totalSteps) * 100);
 
   const moveNext = () => {
     setStep(prev => {
@@ -152,7 +151,7 @@ export default function TestPage({ days }) {
       } else {
         calcScoreAndFinish();
       }
-    }, 180);
+    });
   };
 
   const handleMultiConfirm = (arr) => {
@@ -165,7 +164,7 @@ export default function TestPage({ days }) {
     setTimeout(() => {
       if (step + 1 < totalSteps) setStep(step + 1);
       else calcScoreAndFinish();
-    }, 120);
+    });
   };
 
   const handleNumberSubmit = (num) => {
@@ -175,28 +174,28 @@ export default function TestPage({ days }) {
       return copy;
     });
     // перейти к подсчёту
-    setTimeout(() => calcScoreAndFinish(), 120);
+    setTimeout(() => calcScoreAndFinish());
   };
 
   const calcScoreAndFinish = () => {
     // считаем score по правилам (точное совпадение для числа)
-    let s = 0;
-    questions.forEach((q, idx) => {
-      const a = answers[idx];
-      if (q.type === "single") {
-        if (a === q.correct) s++;
-      } else if (q.type === "multiple") {
-        if (Array.isArray(a) && a.length === q.correct.length) {
-          // проверка: оба совпадают (порядок не важен)
-          const sortedA = [...a].slice(0).sort();
-          const sortedC = [...q.correct].slice(0).sort();
-          if (JSON.stringify(sortedA) === JSON.stringify(sortedC)) s++;
-        }
-      } else if (q.type === "number") {
-        if (Number(a) === Number(q.correct)) s++;
-      }
-    });
-    setScore(s);
+    // let s = 0;
+    // questions.forEach((q, idx) => {
+    //   const a = answers[idx];
+    //   if (q.type === "single") {
+    //     if (a === q.correct) s++;
+    //   } else if (q.type === "multiple") {
+    //     if (Array.isArray(a) && a.length === q.correct.length) {
+    //       // проверка: оба совпадают (порядок не важен)
+    //       const sortedA = [...a].slice(0).sort();
+    //       const sortedC = [...q.correct].slice(0).sort();
+    //       if (JSON.stringify(sortedA) === JSON.stringify(sortedC)) s++;
+    //     }
+    //   } else if (q.type === "number") {
+    //     if (Number(a) === Number(q.correct)) s++;
+    //   }
+    // });
+    // setScore(s);
     setStage("result");
   };
 
@@ -209,7 +208,15 @@ export default function TestPage({ days }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.28 }}
-        className="max-w-xl mx-auto p-6 bg-white rounded-2xl shadow-lg"
+        style={{
+          maxWidth: "500px",
+          width: "100%",
+          margin: "0 auto",
+          padding: "24px",
+          backgroundColor: "white",
+          borderRadius: "16px",
+          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)"
+        }}
       >
         {children}
       </motion.div>
@@ -218,19 +225,37 @@ export default function TestPage({ days }) {
 
   // ----- Рендер -----
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div style={{ 
+      padding: "24px", 
+      maxWidth: "800px", 
+      margin: "100px 100px",
+      width: "100%" 
+    }}>
       {/* ПРОГРЕСС БАР */}
       {stage !== "intro" && (
-        <div className="mb-4">
-          <div className="w-full h-3 bg-gray-200 rounded-xl overflow-hidden">
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ 
+            width: "100%", 
+            height: "8px", 
+            backgroundColor: "#e5e7eb",
+            borderRadius: "12px",
+            overflow: "hidden"
+          }}>
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${Math.max(4, progressPercent)}%` }}
+              animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 0.4 }}
-              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+              style={{
+                height: "100%",
+                background: "linear-gradient(to right, #3b82f6, #6366f1)"
+              }}
             />
           </div>
-          <div className="text-sm text-gray-500 mt-2">
+          <div style={{ 
+            fontSize: "14px", 
+            color: "#6b7280", 
+            marginTop: "8px" 
+          }}>
             Вопрос {Math.min(step + 1, totalSteps)} из {totalSteps}
           </div>
         </div>
@@ -239,13 +264,40 @@ export default function TestPage({ days }) {
       {/* INTRO */}
       {stage === "intro" && (
         <Card>
-          <h1 className="text-2xl font-bold mb-3">Тест финансовой грамотности</h1>
-          <p className="text-gray-600 mb-4">
+          <h1 style={{ 
+            fontSize: "24px", 
+            fontWeight: "bold", 
+            marginBottom: "12px",
+            color: "#1f2937"
+          }}>
+            Тест финансовой грамотности
+          </h1>
+          <p style={{ 
+            fontSize: "16px", 
+            color: "#6b7280", 
+            marginBottom: "24px",
+            lineHeight: "1.5"
+          }}>
             Тест из 4 вопросов, построенный на твоих реальных расходах.
           </p>
           <button
             onClick={() => { setStage("test"); setStep(0); }}
-            className="px-5 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "12px 16px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              borderRadius: "12px",
+              border: "none",
+              fontWeight: "600",
+              fontSize: "16px",
+              cursor: "pointer",
+              transition: "background-color 0.2s",
+              textAlign: "center"
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#2563eb"}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#3b82f6"}
           >
             Начать тест
           </button>
@@ -255,121 +307,110 @@ export default function TestPage({ days }) {
       {/* TEST STEPS */}
       {stage === "test" && (
         <Card>
-          <h2 className="text-lg font-semibold mb-3">
+          <h2 style={{ 
+            fontSize: "20px", 
+            fontWeight: "600", 
+            marginBottom: "32px",
+            color: "#1f2937",
+            textAlign: "center",
+            lineHeight: "1.4"
+          }}>
             {questions[step].text}
           </h2>
 
-          {/* single */}
+          {/* single - всегда по центру независимо от длины вопроса */}
           {questions[step].type === "single" && (
-            <div>
-              {questions[step].options.map(opt => (
-                <button
-                  key={opt}
-                  onClick={() => handleAnswerImmediate(opt)}
-                  className="w-full text-left p-3 mb-3 border rounded-xl hover:bg-gray-50"
-                >
-                  {opt}
-                </button>
-              ))}
+            <div style={{ 
+              width: "100%",
+              maxWidth: "400px",
+              margin: "0 auto"
+            }}>
+              <div style={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                gap: "12px", 
+                marginBottom: "24px"
+              }}>
+                {questions[step].options.map(opt => {
+                  const isSelected = answers[step] === opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => handleAnswerImmediate(opt)}
+                      style={{
+                        padding: "14px 16px",
+                        borderRadius: "12px",
+                        border: isSelected ? "2px solid #3b82f6" : "1px solid #d1d5db",
+                        backgroundColor: isSelected ? "#3b82f6" : "white",
+                        color: isSelected ? "white" : "#374151",
+                        fontWeight: "500",
+                        fontSize: "16px",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        outline: "none",
+                        textAlign: "left",
+                        width: "100%",
+                        boxSizing: "border-box"
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.backgroundColor = "#f3f4f6";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.backgroundColor = "white";
+                        }
+                      }}
+                    >
+                      {opt}
+                      {isSelected && (
+                        <span style={{ float: "right", fontWeight: "bold" }}>✓</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
           {/* multiple */}
           {questions[step].type === "multiple" && (
-            <MultiSelect
-              options={questions[step].options}
-              onConfirm={handleMultiConfirm}
-              maxSelect={2}
-            />
+            <div style={{ 
+              width: "100%",
+              maxWidth: "400px",
+              margin: "0 auto"
+            }}>
+              <MultiSelect
+                options={questions[step].options}
+                onConfirm={handleMultiConfirm}
+                maxSelect={2}
+              />
+            </div>
           )}
 
           {/* number */}
           {questions[step].type === "number" && (
-            <NumberInput onSubmit={handleNumberSubmit} />
+            <div style={{ 
+              width: "100%",
+              maxWidth: "400px",
+              margin: "0 auto"
+            }}>
+              <NumberInput onSubmit={handleNumberSubmit} />
+            </div>
           )}
         </Card>
       )}
 
       {/* RESULT */}
       {stage === "result" && (
-        <Card>
-          <h1 className="text-2xl font-bold mb-2">Результат</h1>
-          <p className="mb-4">Вы набрали <b>{score}</b> из <b>{totalSteps}</b> ({Math.round((score / totalSteps) * 100)}%).</p>
-
-          <button
-            onClick={() => setShowCorrect(prev => !prev)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-xl mb-3"
-          >
-            {showCorrect ? "Скрыть правильные ответы" : "Показать правильные ответы"}
-          </button>
-
-          {showCorrect && (
-            <div className="mt-3 space-y-3">
-              {questions.map((q, i) => (
-                <div key={q.id} className="p-3 border rounded-lg bg-gray-50">
-                  <div className="font-medium">{i + 1}. {q.text}</div>
-                  <div className="mt-1 text-sm text-gray-700">
-                    Твой ответ: <span className="font-semibold">{Array.isArray(answers[i]) ? (answers[i].join(", ") || "—") : (answers[i] ?? "—")}</span>
-                  </div>
-                  <div className="text-sm mt-1">
-                    Правильный ответ: <span className="font-semibold">{Array.isArray(q.correct) ? q.correct.join(", ") : (q.correct ?? "—")}</span>
-                  </div>
-                  <div className={`mt-2 font-bold ${(() => {
-                    // определим правильность
-                    if (q.type === "single") return (answers[i] === q.correct) ? "text-green-600" : "text-red-600";
-                    if (q.type === "multiple") {
-                      const a = answers[i] || [];
-                      const ok = Array.isArray(a) && a.length === q.correct.length &&
-                        JSON.stringify([...a].sort()) === JSON.stringify([...q.correct].sort());
-                      return ok ? "text-green-600" : "text-red-600";
-                    }
-                    if (q.type === "number") return (Number(answers[i]) === Number(q.correct)) ? "text-green-600" : "text-red-600";
-                    return "";
-                  })()}`}>
-                    {(() => {
-                      if (q.type === "single") return (answers[i] === q.correct) ? "✓ Верно" : "✗ Неверно";
-                      if (q.type === "multiple") {
-                        const a = answers[i] || [];
-                        const ok = Array.isArray(a) && a.length === q.correct.length &&
-                          JSON.stringify([...a].sort()) === JSON.stringify([...q.correct].sort());
-                        return ok ? "✓ Верно" : "✗ Неверно";
-                      }
-                      if (q.type === "number") return (Number(answers[i]) === Number(q.correct)) ? "✓ Верно" : "✗ Неверно";
-                      return "";
-                    })()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-5 flex gap-3">
-            <button
-              onClick={() => {
-                // сброс
-                setStage("intro");
-                setStep(0);
-                setAnswers([]);
-                setScore(0);
-                setShowCorrect(false);
-              }}
-              className="px-4 py-2 bg-gray-700 text-white rounded-xl"
-            >
-              Пройти снова
-            </button>
-
-            <button
-              onClick={() => {
-                // вернуться на страницу расходов — просто навигация зависит от твоего App.jsx
-                // здесь использую history.back как безопасный вариант (можешь заменить)
-                window.history.back();
-              }}
-              className="px-4 py-2 bg-white border rounded-xl"
-            >
-              Вернуться
-            </button>
-          </div>
-        </Card>
+        <div style={{ 
+          maxWidth: "500px",
+          margin: "0 auto"
+        }}>
+          <Result questions={questions} answers={answers} />
+        </div>
       )}
     </div>
   );
