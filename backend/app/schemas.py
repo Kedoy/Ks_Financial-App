@@ -25,3 +25,29 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
+class TransactionBase(BaseModel):
+    amount: float
+    description: Optional[str] = None
+    category_id: Optional[int] = None
+    type: str = "expense"  # "expense" или "income"
+    date: Optional[datetime] = None
+
+class TransactionCreate(TransactionBase):
+    pass
+
+class TransactionUpdate(BaseModel):
+    amount: Optional[float] = None
+    description: Optional[str] = None
+    category_id: Optional[int] = None
+    type: Optional[str] = None
+    date: Optional[datetime] = None
+
+class Transaction(TransactionBase):
+    id: int
+    user_id: int
+    source: str = "manual"
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True

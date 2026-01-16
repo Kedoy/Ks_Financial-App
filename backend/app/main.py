@@ -5,6 +5,7 @@ from app.api import auth
 from app.database import get_db
 from sqlalchemy.orm import Session
 from app.models import User
+from app.api import auth, categories, transactions
 
 # Создаём таблицы (если ещё не созданы)
 Base.metadata.create_all(bind=engine)
@@ -17,6 +18,7 @@ app = FastAPI(
 
 # Подключаем роутеры
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["transactions"])
 
 @app.get("/")
 async def root():
