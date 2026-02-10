@@ -1,0 +1,133 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{lipsum} % Пакет для создания "рыбного текста" - заменить на реальный текст
+\graphicspath{ {./images/} } % Путь к папке с изображениями
+
+\title{Отчет о разработке мобильного приложения \\ «Система учета расходов по SMS»}
+\author{
+    Исполнитель: <ФИО Исполнителя> \\
+    Роль: <Ваша Роль> \\
+    Дата: <Дата составления отчета>
+}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Введение}
+\label{sec:introduction}
+\subsection{Цель и Задачи Проекта}
+Целью данного проекта является разработка мобильного приложения для платформы Android, которое позволит пользователям автоматически отслеживать и анализировать свои финансовые расходы на основе SMS-сообщений от банков.
+\lipsum[1] % Заменить на описание проблемы и ее решения
+
+\subsection{Область Применения}
+<PLACEHOLDER: Описание целевой аудитории и сферы применения.>
+\lipsum[2]
+
+\newpage
+\section{Архитектура Приложения}
+\label{sec:architecture}
+\subsection{Общая Структура}
+Проект использует клиент-серверную архитектуру, где мобильное приложение (клиент) взаимодействует с удаленным сервером (бэкенд) посредством RESTful API.
+
+\begin{itemize}
+    \item \textbf{Клиент (Android App):} Отвечает за интерфейс, считывание SMS, парсинг данных и отправку их на сервер.
+    \item \textbf{Сервер (Backend):} Отвечает за хранение данных (БД), систему аутентификации, обработку запросов от клиента и предоставление аналитической информации.
+\end{itemize}
+
+\subsection{Диаграмма Архитектуры}
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{<PLACEHOLDER: file_name_architecture_diagram.png>} % Заменить на имя файла
+    \caption{Схема архитектуры проекта}
+    \label{fig:architecture}
+\end{figure}
+
+\newpage
+\section{Компоненты Клиентской Части (Android)}
+\label{sec:client_components}
+
+\subsection{Классы и Модели Данных}
+Описание ключевых классов, используемых в приложении для представления данных и логики.
+
+\begin{itemize}
+    \item \textbf{UserModel:} Модель данных для хранения информации о пользователе (ID, токен, настройки).
+    \item \textbf{TransactionModel:} Модель данных для представления финансовой транзакции (Сумма, Категория, Дата, Описание).
+    \item \textbf{SmsParserUtil:} Статический класс/утилита для извлечения информации из текстового тела SMS.
+    \item \textbf{...} <PLACEHOLDER: Добавить другие ключевые классы>
+\end{itemize}
+
+\subsection{Сервисы и Логика}
+Описание ключевых компонентов, работающих в фоновом режиме или реализующих основную логику.
+
+\begin{itemize}
+    \item \textbf{SmsReceiverService:} Сервис для прослушивания входящих SMS-сообщений.
+    \item \textbf{AuthService:} Сервис для взаимодействия с API аутентификации (логин, регистрация).
+    \item \textbf{DataSyncService:} Сервис для отправки спарсенных транзакций на бэкенд и получения истории расходов.
+    \item \textbf{...} <PLACEHOLDER: Добавить другие ключевые сервисы>
+\end{itemize}
+
+\newpage
+\section{Реализация Основной Функциональности}
+\label{sec:implementation}
+
+\subsection{Система Аутентификации}
+Процесс регистрации и входа пользователя, использование токенов для защищенного доступа к API.
+<PLACEHOLDER: Описание механизма аутентификации (например, OAuth2, JWT).>
+
+\subsection{Парсинг SMS и Сохранение Данных}
+Детализация процесса получения SMS, его фильтрации (по номеру телефона), парсинга суммы и других деталей, а также последующей отправки данных на сервер.
+
+\subsubsection{Алгоритм Парсинга}
+<PLACEHOLDER: Описание регулярных выражений или логики для извлечения суммы, даты, описания из SMS.>
+
+\subsection{API Бэкенда}
+Краткое описание ключевых конечных точек (endpoints) API.
+
+\begin{itemize}
+    \item \texttt{POST /api/auth/login}
+    \item \texttt{POST /api/transactions/upload}
+    \item \texttt{GET /api/transactions/history}
+    \item \texttt{GET /api/analytics/summary}
+\end{itemize}
+<PLACEHOLDER: Детализация параметров и ответов.>
+
+\newpage
+\section{Скриншоты Приложения}
+\label{sec:screenshots}
+Визуальное представление разработанного приложения.
+
+\subsection{Экран Авторизации/Регистрации}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.45\textwidth]{<PLACEHOLDER: screenshot_login.png>}
+    \caption{Экран входа}
+    \label{fig:login}
+\end{figure}
+
+\subsection{Главный Экран с Расходами}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.45\textwidth]{<PLACEHOLDER: screenshot_main.png>}
+    \caption{Список транзакций}
+    \label{fig:main}
+\end{figure}
+
+\subsection{Экран Аналитики}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.45\textwidth]{<PLACEHOLDER: screenshot_analytics.png>}
+    \caption{Визуализация расходов}
+    \label{fig:analytics}
+\end{figure}
+
+\end{document}

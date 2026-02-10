@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная - Учет финансов</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="header" role="banner">
+        <div class="logo">
+            <a href="index.html" aria-label="На главную страницу">
+                <img src="images/logo.png" alt="Логотип сайта - Учет финансов">
+            </a> 
+        </div> 
+        <div class="auth-buttons">
+            <a href="autorize.html" class="auth-button" id="loginBtn">Вход</a>
+            <a href="register.html" class="auth-button" id="registerBtn">Регистрация</a>
+        </div>
+</header>
+<main class="main-container">
+    <nav class="sidebar" aria-label="Основная навигация">
+        <div class="sidebar-content">
+            <ul>
+                <li><a href="index.html" class="active" aria-current="page"><i class='bx bxs-home'></i> Главная</a></li>
+                <li><a href="analytics.html"><i class='bx bx-stats'></i> Аналитика</a></li>
+                <li><a href="test.html"><i class='bx bxs-graduation'></i> Тест</a></li>
+                <li><a href="game.html"><i class='bx bxs-joystick-alt'></i> Кешбекни!</a></li>
+                <li><a href="about.html"><i class='bx bxs-info-circle'></i> О проекте</a></li>
+            </ul>
+            <div class="app-links">
+                <a href="#" class="app-link" aria-label="Telegram"><i class='bx bxl-telegram'></i></a>
+                <a href="#" class="app-link" aria-label="ВКонтакте"><i class='bx bxl-vk'></i></a>
+                <a href="#" class="app-link" aria-label="YouTube"><i class='bx bxl-youtube'></i></a>
+                <a href="#" class="app-link" aria-label="TikTok"><i class='bx bxl-tiktok'></i></a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="content" aria-labelledby="page-title">
+        <h1 class="page-title" id="page-title">Учет расходов</h1>
+        <div class="table-container">
+            <table class="expenses-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Дата</th>
+                        <th scope="col">Название</th>
+                        <th scope="col">Категория</th>
+                        <th scope="col">Сумма</th>
+                        <th scope="col">                            
+                            <div class="controls">
+                                <button id="addExpenseBtn" aria-label="Добавить новый расход">
+                                    <i class='bx bx-list-plus'></i> Добавить
+                                </button>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="expensesTableBody">
+                    <!-- Данные будут добавляться через JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <aside class="analytics-sidebar" aria-label="Статистика расходов">
+        <h2>Сводка</h2>
+        <div class="analytics-block">
+            <h3>Расходы за сегодня</h3>
+            <p id="todayExpenses">0 руб.</p>
+        </div>
+        <div class="analytics-block">
+            <h3>Самая частая категория</h3>
+            <p id="topCategory">-</p>
+        </div>
+        <div class="analytics-block">
+            <h3>Рекомендация</h3>
+            <p id="recommendation">Добавьте первые данные для анализа.</p>
+        </div>
+        <canvas id="categoryChart" width="200" height="200" aria-label="Диаграмма расходов по категориям"></canvas>
+    </aside>
+</main>
+
+<footer class="footer" role="contentinfo">
+    <p>Контактная информация: avekedoy@yandex.ru</p>
+    <p>Лицензия: MIT</p>
+</footer>
+
+<!-- Модальное окно для добавления расходов -->
+<div id="expenseModal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="modal-content">
+        <span class="close" aria-label="Закрыть окно">&times;</span>
+        <h2 id="modalTitle">Добавить новый расход</h2>
+        <form id="expenseForm">
+            <label for="expenseDate">Дата:</label>
+            <input type="date" id="expenseDate" required aria-required="true">
+
+            <label for="expenseTitle">Название:</label>
+            <input type="text" id="expenseTitle" placeholder="На что потратили?" required 
+                   aria-required="true" maxlength="100">
+
+            <label for="expenseCategory">Категория:</label>
+            <select id="expenseCategory" required aria-required="true">
+                <option value="">Выберите категорию</option>
+                <option value="Еда">Еда</option>
+                <option value="Транспорт">Транспорт</option>
+                <option value="Развлечения">Развлечения</option>
+                <option value="Жилье">Жилье</option>
+                <option value="Прочее">Прочее</option>
+            </select>
+
+            <label for="expenseAmount">Сумма (руб.):</label>
+            <input type="number" id="expenseAmount" min="0" step="0.01" required 
+                   aria-required="true" aria-describedby="amountHelp">
+            <small id="amountHelp">Минимальная сумма: 0 руб.</small>
+
+            <button type="submit">Сохранить</button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="scripts/index.js"></script>
+</body>
+</html>
