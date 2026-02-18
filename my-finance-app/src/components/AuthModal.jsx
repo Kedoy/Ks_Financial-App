@@ -3,9 +3,9 @@ import { useAuth } from "../auth/AuthContext";
 
 export default function AuthModal({ open, onClose, mode: initialMode = "login", onSuccess }) {
   const { login, register, migrateGuestData, getGuestData, clearGuestData } = useAuth();
-  
+
   const [mode, setMode] = useState(initialMode);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -24,26 +24,26 @@ export default function AuthModal({ open, onClose, mode: initialMode = "login", 
 
   if (!open) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    
+
     setError(null);
     setIsProcessing(true);
 
-    const trimmedUsername = username.trim();
-    
-    if (!trimmedUsername || !password) {
-      setError("Введите логин и пароль");
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !password) {
+      setError("Введите email и пароль");
       setIsProcessing(false);
       return;
     }
 
     if (mode === "login") {
-      // ВХОД
-      const res = login(trimmedUsername, password);
-      
+      // ВХОД через Django API
+      const res = await login(trimmedEmail, password);
+
       if (!res.ok) {
-        setError(res.message || "Неверный логин или пароль");
+        setError(res.message || "Неверный email или пароль");
         setIsProcessing(false);
         return;
       }
@@ -53,26 +53,26 @@ export default function AuthModal({ open, onClose, mode: initialMode = "login", 
       if (days.length > 0) {
         const shouldMigrate = window.confirm(
           `У вас есть ${days.length} дней с расходами в гостевом режиме.\n` +
-          `Хотите перенести их в аккаунт "${trimmedUsername}"?`
+          `Хотите перенести их в аккаунт "${trimmedEmail}"?`
         );
-        
+
         if (shouldMigrate) {
           migrateGuestData(days, categories);
           clearGuestData();
         }
       }
-      
+
       onSuccess?.();
       onClose();
 
     } else {
-      // РЕГИСТРАЦИЯ
+      // РЕГИСТРАЦИЯ через Django API
       const { days, categories } = getGuestData();
-      
+
       // Регистрируем с гостевыми данными (если они есть)
       const guestData = days.length > 0 ? { days, categories } : null;
-      const res = register(trimmedUsername, password, guestData);
-      
+      const res = await register(trimmedEmail, password, guestData);
+
       if (!res.ok) {
         setError(res.message || "Ошибка при регистрации");
         setIsProcessing(false);
@@ -88,7 +88,7 @@ export default function AuthModal({ open, onClose, mode: initialMode = "login", 
       onSuccess?.();
       onClose();
     }
-    
+
     setIsProcessing(false);
   };
 
@@ -149,10 +149,11 @@ export default function AuthModal({ open, onClose, mode: initialMode = "login", 
 
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <input 
-              placeholder="Логин" 
-              value={username} 
-              onChange={e => setUsername(e.target.value)}
+            <input
+              placeholder="Email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               onKeyPress={handleKeyPress}
               style={{
                 padding: '12px',
@@ -165,11 +166,11 @@ export default function AuthModal({ open, onClose, mode: initialMode = "login", 
               disabled={isProcessing}
               autoFocus
             />
-            
-            <input 
-              placeholder="Пароль" 
-              type="password" 
-              value={password} 
+
+            <input
+              placeholder="Пароль"
+              type="password"
+              value={password}
               onChange={e => setPassword(e.target.value)}
               onKeyPress={handleKeyPress}
               style={{

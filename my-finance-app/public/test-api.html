@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test {
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .success { border-left: 4px solid #4CAF50; }
+        .error { border-left: 4px solid #f44336; }
+        .pending { border-left: 4px solid #ff9800; }
+        button {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #357abd; }
+        pre {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест подключения к Django API</h1>
+    
+    <div class="test pending" id="status">
+        <h3>Статус подключения</h3>
+        <p>Нажмите кнопку для проверки</p>
+    </div>
+
+    <button onclick="testConnection()">🔄 Проверить подключение</button>
+    <button onclick="testLogin()">🔑 Тест входа</button>
+    <button onclick="testRegister()">📝 Тест регистрации</button>
+
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/v1';
+
+        function showResult(testName, success, data) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test ${success ? 'success' : 'error'}`;
+            div.innerHTML = `
+                <h4>${testName} ${success ? '✅' : '❌'}</h4>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            results.appendChild(div);
+        }
+
+        function updateStatus(connected) {
+            const status = document.getElementById('status');
+            status.className = `test ${connected ? 'success' : 'error'}`;
+            status.innerHTML = `
+                <h3>${connected ? '✅ Подключено' : '❌ Ошибка подключения'}</h3>
+                <p>Django API: ${connected ? 'Доступен' : 'Недоступен'}</p>
+            `;
+        }
+
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_URL}/auth/me/`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                // 401 это нормально - значит сервер работает, но нет токена
+                if (response.status === 401) {
+                    updateStatus(true);
+                    showResult('Подключение к API', true, {
+                        status: 'OK',
+                        message: 'Django API доступен (401 - нет токена, это нормально)'
+                    });
+                } else {
+                    const data = await response.json();
+                    updateStatus(true);
+                    showResult('Подключение к API', true, data);
+                }
+            } catch (error) {
+                updateStatus(false);
+                showResult('Подключение к API', false, error.message);
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API_URL}/auth/login/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@admin.com',
+                        password: 'admin123'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStatus(true);
+                    showResult('Вход (admin@admin.com)', true, {
+                        access_token: data.access_token ? '***' : 'Не получен',
+                        user: data.user
+                    });
+                    // Сохраняем токен для следующих тестов
+                    localStorage.setItem('access_token', data.access_token);
+                } else {
+                    showResult('Вход', false, data);
+                }
+            } catch (error) {
+                showResult('Вход', false, error.message);
+            }
+        }
+
+        async function testRegister() {
+            const email = `test_${Date.now()}@example.com`;
+            try {
+                const response = await fetch(`${API_URL}/auth/register/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: 'testpass123',
+                        password_confirm: 'testpass123',
+                        username: email.split('@')[0]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStatus(true);
+                    showResult('Регистрация', true, data);
+                    localStorage.setItem('access_token', data.access_token);
+                } else {
+                    showResult('Регистрация', false, data);
+                }
+            } catch (error) {
+                showResult('Регистрация', false, error.message);
+            }
+        }
+
+        // Автоматическая проверка при загрузке
+        window.onload = () => {
+            console.log('API_URL:', API_URL);
+            testConnection();
+        };
+    </script>
+</body>
+</html>

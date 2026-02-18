@@ -1,11 +1,19 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { authAPI } from "../api/client";
 
 const USERS_KEY = "finance_users";
 const CUR_KEY = "finance_current_user";
+const TOKEN_KEY = "access_token";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  // Состояния для Django API
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Состояния для локального хранения (гостевой режим)
   const [users, setUsers] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
@@ -24,6 +32,46 @@ export function AuthProvider({ children }) {
     }
   });
 
+  // Проверка авторизации при загрузке
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem(TOKEN_KEY);
+      
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await authAPI.getProfile();
+        setUser(response.data);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error("Token validation failed:", error);
+        localStorage.removeItem(TOKEN_KEY);
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // Обработчик ошибки аутентификации
+  useEffect(() => {
+    const handleAuthError = () => {
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem(TOKEN_KEY);
+    };
+
+    window.addEventListener('auth-error', handleAuthError);
+    return () => window.removeEventListener('auth-error', handleAuthError);
+  }, []);
+
+  // Сохранение локальных пользователей
   const saveUsers = useCallback((u) => {
     setUsers(u);
     try {
@@ -33,95 +81,98 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const getCurrentUser = useCallback(() => 
-    users.find(u => u.username === currentUsername) || null, 
+  const getCurrentUser = useCallback(() =>
+    users.find(u => u.username === currentUsername) || null,
     [users, currentUsername]
   );
 
   const updateCurrentUser = useCallback((patch) => {
     const u = getCurrentUser();
     if (!u) return false;
-    
+
     const updated = { ...u, ...patch };
     const newUsers = users.map(x => x.username === u.username ? updated : x);
     saveUsers(newUsers);
     return true;
   }, [users, getCurrentUser, saveUsers]);
 
-  const login = useCallback((username, password) => {
-    const found = users.find(it => it.username === username && it.password === password);
-    if (!found) return { ok: false, message: "Неверный логин или пароль" };
-    
-    setCurrentUsername(username);
+  // Вход через Django API
+  const login = useCallback(async (email, password) => {
     try {
-      localStorage.setItem(CUR_KEY, username);
-    } catch (e) {
-      console.error("Error saving session:", e);
-    }
-    
-    return { ok: true };
-  }, [users]);
+      const response = await authAPI.login(email, password);
+      const { access_token, user: userData } = response.data;
 
-  const logout = useCallback(() => {
-    setCurrentUsername(null);
-    try {
-      localStorage.removeItem(CUR_KEY);
-    } catch (e) {
-      console.error("Error clearing session:", e);
+      // Сохраняем токен и данные пользователя
+      localStorage.setItem(TOKEN_KEY, access_token);
+      setUser(userData);
+      setIsAuthenticated(true);
+
+      return { ok: true, user: userData };
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        ok: false,
+        message: error.response?.data?.detail || "Ошибка входа"
+      };
     }
-    // Не перезагружаем страницу, чтобы сохранить состояние
+  }, []);
+
+  // Выход
+  const logout = useCallback(async () => {
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem(TOKEN_KEY);
+      setUser(null);
+      setIsAuthenticated(false);
+    }
     return true;
   }, []);
 
-  const register = useCallback((username, password, guestData = null) => {
-    if (!username || !password) {
-      return { ok: false, message: "Введите логин и пароль" };
-    }
-    
-    if (users.find(u => u.username === username)) {
-      return { ok: false, message: "Пользователь уже существует" };
+  // Регистрация через Django API
+  const register = useCallback(async (email, password, guestData = null) => {
+    if (!email || !password) {
+      return { ok: false, message: "Введите email и пароль" };
     }
 
-    // Стандартные категории
-    const defaultCategories = ["Еда", "Дом", "Транспорт", "Развлечения"];
-    
-    // Если есть гостевые данные, объединяем с ними
-    let initialDays = [];
-    let initialCategories = [...defaultCategories];
-    
-    if (guestData) {
-      initialDays = guestData.days || [];
-      
-      // Объединяем категории, убираем дубликаты
-      const guestCategories = guestData.categories || [];
-      initialCategories = [...new Set([...defaultCategories, ...guestCategories])];
-    }
-
-    const newUser = {
-      username,
-      password,
-      days: initialDays,
-      categories: initialCategories
-    };
-
-    const newUsers = [...users, newUser];
-    saveUsers(newUsers);
-    setCurrentUsername(username);
-    
     try {
-      localStorage.setItem(CUR_KEY, username);
-    } catch (e) {
-      console.error("Error saving session:", e);
-    }
-    
-    return { 
-      ok: true, 
-      message: guestData ? 
-        `Аккаунт создан с ${initialDays.length} днями расходов` : 
-        "Аккаунт успешно создан" 
-    };
-  }, [users, saveUsers]);
+      const response = await authAPI.register({
+        email,
+        password,
+        password_confirm: password,
+        username: email.split('@')[0],
+      });
 
+      const { access_token, user: userData } = response.data;
+
+      // Сохраняем токен и данные пользователя
+      localStorage.setItem(TOKEN_KEY, access_token);
+      setUser(userData);
+      setIsAuthenticated(true);
+
+      // Если есть гостевые данные, можно предложить перенос
+      if (guestData && guestData.days?.length > 0) {
+        // Здесь можно добавить миграцию данных на сервер
+        console.log("Guest data available for migration:", guestData);
+      }
+
+      return {
+        ok: true,
+        user: userData,
+        message: "Аккаунт успешно создан"
+      };
+    } catch (error) {
+      console.error("Registration error:", error);
+      return {
+        ok: false,
+        message: error.response?.data?.email?.[0] || "Ошибка регистрации"
+      };
+    }
+  }, []);
+
+  // Остальные методы для гостевого режима
   const migrateGuestData = useCallback((guestDays = [], guestCategories = []) => {
     const u = getCurrentUser();
     if (!u) return { ok: false, message: "Пользователь не авторизован" };
@@ -137,7 +188,7 @@ export function AuthProvider({ children }) {
     if (guestDays.length > 0) {
       const existingDates = new Set(updatedDays.map(day => day.date));
       const newDays = guestDays.filter(day => !existingDates.has(day.date));
-      
+
       if (newDays.length > 0) {
         updatedDays = [...updatedDays, ...newDays]
           .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -149,14 +200,13 @@ export function AuthProvider({ children }) {
     if (guestCategories.length > 0) {
       const existingCats = new Set(updatedCategories);
       const newCats = guestCategories.filter(cat => !existingCats.has(cat));
-      
+
       if (newCats.length > 0) {
         updatedCategories = [...updatedCategories, ...newCats];
         console.log(`Added ${newCats.length} new categories`);
       }
     }
 
-    // Сохраняем обновлённые данные
     const success = updateCurrentUser({
       days: updatedDays,
       categories: updatedCategories
@@ -164,7 +214,7 @@ export function AuthProvider({ children }) {
 
     return {
       ok: success,
-      message: success ? 
+      message: success ?
         `Перенесено: ${guestDays.length} дней, ${guestCategories.length} категорий` :
         "Ошибка при переносе данных"
     };
@@ -178,7 +228,6 @@ export function AuthProvider({ children }) {
     return updateCurrentUser({ categories: newCategories });
   }, [updateCurrentUser]);
 
-  // Получить гостевые данные (для использования в UI)
   const getGuestData = useCallback(() => {
     try {
       const days = JSON.parse(localStorage.getItem("expenses_guest")) || [];
@@ -190,7 +239,6 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Очистить гостевые данные
   const clearGuestData = useCallback(() => {
     try {
       localStorage.removeItem("expenses_guest");
@@ -203,28 +251,33 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    // Если текущий пользователь удалён из системы - выходим
     if (currentUsername && !users.find(u => u.username === currentUsername)) {
       console.warn("User no longer exists, logging out");
-      logout();
+      setCurrentUsername(null);
     }
-  }, [users, currentUsername, logout]);
+  }, [users, currentUsername]);
 
   return (
     <AuthContext.Provider value={{
-      users,
-      currentUsername,
-      user: getCurrentUser(),
+      // Django API
+      user,
+      loading,
+      isAuthenticated,
       login,
       logout,
       register,
-      migrateGuestData,
+      
+      // Гостевой режим (локальное хранение)
+      users,
+      currentUsername,
+      localUser: getCurrentUser(),
+      saveUsers,
       updateCurrentUser,
+      migrateGuestData,
       updateUserExpenses,
       updateUserCategories,
       getGuestData,
       clearGuestData,
-      saveUsers
     }}>
       {children}
     </AuthContext.Provider>
