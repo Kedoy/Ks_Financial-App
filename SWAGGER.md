@@ -11,6 +11,15 @@
 - ✅ **Бесплатный хостинг** - публикация на GitHub Pages
 - ✅ **Автообновление** - документация обновляется при каждом push в main
 
+## Ссылки
+
+| Описание | URL |
+|----------|-----|
+| **GitHub Pages** | https://avekedoy.github.io/Ks_Financial-App/ |
+| **Swagger UI** | http://localhost:8000/api/docs/ |
+| **ReDoc** | http://localhost:8000/api/redoc/ |
+| **OpenAPI Schema** | http://localhost:8000/api/schema/ |
+
 ## Локальная разработка
 
 ### 1. Установка зависимостей
@@ -40,9 +49,7 @@ python manage.py runserver 0.0.0.0:8000
 
 ### 4. Открыть Swagger UI
 
-- **Swagger UI:** http://localhost:8000/api/docs/
-- **ReDoc:** http://localhost:8000/api/redoc/
-- **OpenAPI Schema:** http://localhost:8000/api/schema/
+Откройте **http://localhost:8000/api/docs/**
 
 ## Публикация на GitHub Pages
 
@@ -58,38 +65,35 @@ on:
       - main
     paths:
       - 'backend/**'
+      - '.github/workflows/deploy-swagger.yml'
 ```
 
-### Вручную
+### Workflow процесс:
 
-1. Сгенерируйте схему:
-   ```bash
-   cd backend
-   python manage.py spectacular --file openapi-schema.yml
-   ```
+1. **Checkout** - загрузка кода
+2. **Install dependencies** - установка drf-spectacular
+3. **Generate Schema** - генерация openapi-schema.yml
+4. **Download Swagger UI** - загрузка пре-билд файлов
+5. **Create index.html** - кастомный HTML с конфигом
+6. **Upload artifact** - загрузка артефакта
+7. **Deploy to Pages** - публикация
 
-2. Создайте папку swagger-ui:
-   ```bash
-   mkdir -p swagger-ui
-   cp openapi-schema.yml swagger-ui/
-   ```
+### Вручную (локально)
 
-3. Скачайте Swagger UI:
-   ```bash
-   curl -L https://github.com/swagger-api/swagger-ui/archive/v5.10.0.tar.gz | tar -xzf - -C swagger-ui --strip-components=1
-   ```
+```bash
+# 1. Сгенерировать схему
+cd backend
+python manage.py spectacular --file openapi-schema.yml
 
-4. Создайте index.html (см. workflow файл)
+# 2. Скачать Swagger UI
+curl -L https://github.com/swagger-api/swagger-ui/archive/v5.10.0.tar.gz | tar -xzf -
+cp -r swagger-ui-5.10.0/dist/* swagger-ui/
+cp openapi-schema.yml swagger-ui/
 
-5. Задеплойте на GitHub Pages
+# 3. Создать index.html (см. workflow)
 
-## Структура URL
-
-| URL | Описание |
-|-----|----------|
-| `/api/docs/` | Swagger UI (интерактивный) |
-| `/api/redoc/` | ReDoc (статичный) |
-| `/api/schema/` | OpenAPI схема (YAML) |
+# 4. Открыть swagger-ui/index.html в браузере
+```
 
 ## Настройка (Django)
 
@@ -111,7 +115,7 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API для системы учёта и анализа персональных финансов',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    # ... остальные настройки
+    'SWAGGER_UI_DIST': 'https://unpkg.com/swagger-ui-dist@latest',
 }
 ```
 
@@ -195,6 +199,46 @@ class AIInsightsView(APIView):
     # ...
 ```
 
+## API Endpoints
+
+### Auth
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| POST | `/api/v1/auth/login/` | Вход (JWT токены) |
+| POST | `/api/v1/auth/logout/` | Выход |
+| POST | `/api/v1/auth/register/` | Регистрация |
+| POST | `/api/v1/auth/refresh/` | Обновление токена |
+| GET | `/api/v1/auth/me/` | Текущий пользователь |
+
+### Transactions
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/v1/transactions/` | Список транзакций |
+| POST | `/api/v1/transactions/` | Создать транзакцию |
+| GET | `/api/v1/transactions/{id}/` | Детали транзакции |
+| PUT | `/api/v1/transactions/{id}/` | Обновить транзакцию |
+| DELETE | `/api/v1/transactions/{id}/` | Удалить транзакцию |
+| POST | `/api/v1/transactions/sms-parse/` | Парсинг SMS |
+
+### Analytics
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/v1/analytics/summary/` | Общая сводка |
+| GET | `/api/v1/analytics/daily/` | Дневные тренды |
+| GET | `/api/v1/analytics/monthly/` | Месячные тренды |
+| GET | `/api/v1/analytics/ai-insights/` | AI рекомендации |
+
+## Аутентификация в Swagger UI
+
+1. Откройте http://localhost:8000/api/docs/
+2. Нажмите кнопку **Authorize** 🔓
+3. Введите JWT токен: `Bearer eyJ0eXAiOiJKV1QiLCJhbGc...`
+4. Нажмите **Authorize**
+5. Теперь можно тестировать защищённые endpoints
+
 ## Примеры ответов
 
 ### Успех (200 OK)
@@ -238,34 +282,35 @@ class AIInsightsView(APIView):
 }
 ```
 
-## Аутентификация в Swagger UI
+## Структуры файлов
 
-1. Откройте http://localhost:8000/api/docs/
-2. Нажмите кнопку **Authorize** 🔓
-3. Введите JWT токен: `Bearer eyJ0eXAiOiJKV1QiLCJhbGc...`
-4. Нажмите **Authorize**
-5. Теперь можно тестировать защищённые endpoints
+### swagger-ui/
 
-## Управление версиями
-
-### Версионирование схемы
-
-```python
-SPECTACULAR_SETTINGS = {
-    'VERSION': '1.0.0',  # Обновляйте при изменениях API
-    # ...
-}
+```
+swagger-ui/
+├── index.html              # Кастомный HTML
+├── openapi-schema.yml      # Сгенерированная схема
+├── swagger-ui.css          # Стили
+├── swagger-ui-bundle.js    # JS бандл
+├── swagger-ui-standalone-preset.js
+├── favicon-16x16.png
+└── favicon-32x32.png
 ```
 
-### Отключение endpoints из документации
+### backend/
 
-```python
-from drf_spectacular.utils import extend_schema
-
-@extend_schema(exclude=True)
-class InternalView(APIView):
-    # Не появится в документации
-    pass
+```
+backend/
+├── openapi-schema.yml      # Сгенерированная схема (gitignored)
+├── config/
+│   ├── settings/
+│   │   └── base.py         # SPECTACULAR_SETTINGS
+│   └── urls.py             # Swagger endpoints
+└── apps/
+    ├── accounts/
+    ├── transactions/
+    ├── analytics/
+    └── ...
 ```
 
 ## Тестирование
@@ -283,6 +328,26 @@ python manage.py spectacular --file openapi-schema.yml --validate
   run: |
     cd backend
     python manage.py spectacular --file openapi-schema.yml
+```
+
+## Отключение endpoints из документации
+
+```python
+from drf_spectacular.utils import extend_schema
+
+@extend_schema(exclude=True)
+class InternalView(APIView):
+    # Не появится в документации
+    pass
+```
+
+## Версионирование
+
+```python
+SPECTACULAR_SETTINGS = {
+    'VERSION': '1.0.0',  # Обновляйте при изменениях API
+    # ...
+}
 ```
 
 ## Ссылки

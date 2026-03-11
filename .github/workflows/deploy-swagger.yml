@@ -26,7 +26,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,59 +51,65 @@ jobs:
 
       - name: Create Swagger UI
         run: |
+          # Create swagger-ui directory
           mkdir -p swagger-ui
-          
-          # Download Swagger UI
+
+          # Download Swagger UI dist (pre-built files)
           curl -L https://github.com/swagger-api/swagger-ui/archive/refs/tags/v5.10.0.tar.gz -o swagger-ui.tar.gz
-          tar -xzf swagger-ui.tar.gz --strip-components=1 -C swagger-ui
-          
+          tar -xzf swagger-ui.tar.gz
+
+          # Copy pre-built dist files
+          cp -r swagger-ui-5.10.0/dist/* swagger-ui/
+
           # Copy OpenAPI schema
           cp backend/openapi-schema.yml swagger-ui/
-          
-          # Create index.html with custom config
+
+          # Create custom index.html
           cat > swagger-ui/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
           <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Ks Financial App - API Documentation</title>
-            <link rel="stylesheet" type="text/css" href="swagger-ui.css" />
-            <style>
-              html { box-sizing: border-box; overflow-y: scroll; }
-              *, *:before, *:after { box-sizing: inherit; }
-              body { margin: 0; background: #fafafa; }
-              .topbar { display: none; }
-            </style>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Ks Financial App - API Documentation</title>
+              <link rel="stylesheet" type="text/css" href="swagger-ui.css" />
+              <link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32" />
+              <link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16" />
+              <style>
+                  html { box-sizing: border-box; overflow-y: scroll; }
+                  *, *:before, *:after { box-sizing: inherit; }
+                  body { margin: 0; background: #fafafa; }
+              </style>
           </head>
           <body>
-            <div id="swagger-ui"></div>
-            <script src="swagger-ui-bundle.js" crossorigin></script>
-            <script src="swagger-ui-standalone-preset.js" crossorigin></script>
-            <script>
-              window.onload = () => {
-                window.ui = SwaggerUIBundle({
-                  url: 'openapi-schema.yml',
-                  dom_id: '#swagger-ui',
-                  deepLinking: true,
-                  presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIStandalonePreset
-                  ],
-                  plugins: [
-                    SwaggerUIBundle.plugins.DownloadUrl
-                  ],
-                  layout: "StandaloneLayout",
-                  validatorUrl: null,
-                });
-              };
-            </script>
+              <div id="swagger-ui"></div>
+              <script src="swagger-ui-bundle.js" crossorigin></script>
+              <script src="swagger-ui-standalone-preset.js" crossorigin></script>
+              <script>
+                  window.onload = () => {
+                      window.ui = SwaggerUIBundle({
+                          url: 'openapi-schema.yml',
+                          dom_id: '#swagger-ui',
+                          deepLinking: true,
+                          presets: [
+                              SwaggerUIBundle.presets.apis,
+                              SwaggerUIStandalonePreset
+                          ],
+                          plugins: [
+                              SwaggerUIBundle.plugins.DownloadUrl
+                          ],
+                          layout: "StandaloneLayout",
+                          validatorUrl: null,
+                      });
+                  };
+              </script>
           </body>
           </html>
           EOF
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+          # Show what we created
+          echo "=== Swagger UI contents ==="
+          ls -la swagger-ui/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
