@@ -4,11 +4,11 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
+      POSTGRES_DB: fin_db
       POSTGRES_USER: fin_user
       POSTGRES_PASSWORD: fin_password
-      POSTGRES_DB: fin_db
     ports:
-      - "5433:5432"  # 5433 чтобы не конфликтовать с другими Postgres
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -27,6 +27,24 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  backend:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  pgadmin_data:
