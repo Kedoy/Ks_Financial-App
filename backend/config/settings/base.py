@@ -36,7 +36,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_filters',
-    
+    'drf_spectacular',  # Swagger/OpenAPI documentation
+
     # Project apps
     'apps.accounts.apps.AccountsConfig',
     'apps.transactions.apps.TransactionsConfig',
@@ -148,6 +149,7 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Swagger/OpenAPI
     'EXCEPTION_HANDLER': 'apps.core.exceptions.custom_exception_handler',
 }
 
@@ -191,6 +193,56 @@ FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 LOGIN_URL = 'auth_pages:login'
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'auth_pages:login'
+
+# Swagger/OpenAPI Settings (drf-spectacular)
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Ks Financial App API',
+    'DESCRIPTION': '''
+## API для системы учёта и анализа персональных финансов
+
+### Аутентификация
+- Используйте **POST /api/v1/auth/login/** для получения токенов
+- Access token передавайте в заголовке: `Authorization: Bearer <token>`
+- Refresh token автоматически устанавливается в HttpOnly cookie
+
+### Основные эндпоинты
+- **Транзакции** - CRUD операций с финансами
+- **Категории** - управление категориями
+- **Аналитика** - статистика и AI рекомендации
+- **Блог** - посты и комментарии
+
+### AI Функционал
+- **AI Рекомендации** - персональные советы по экономии
+- **SMS Парсинг** - автоматическое создание транзакций из SMS
+''',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'AUTHENTICATION_WHITELIST': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'SECURITY_SCHEMES': {
+        'jwtAuth': {
+            'type': 'http',
+            'scheme': 'bearer',
+            'bearerFormat': 'JWT',
+            'description': 'JWT Bearer token authentication'
+        },
+        'cookieAuth': {
+            'type': 'apiKey',
+            'in': 'cookie',
+            'name': 'refresh_token',
+            'description': 'Refresh token in HttpOnly cookie'
+        }
+    },
+    'TAGS': [
+        {'name': 'Auth', 'description': 'Аутентификация и управление профилем'},
+        {'name': 'Transactions', 'description': 'Управление транзакциями'},
+        {'name': 'Categories', 'description': 'Категории доходов/расходов'},
+        {'name': 'Analytics', 'description': 'Аналитика и AI рекомендации'},
+        {'name': 'Blog', 'description': 'Блог и комментарии'},
+    ]
+}
 
 # AI Settings
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434')

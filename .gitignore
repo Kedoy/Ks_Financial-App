@@ -72,6 +72,10 @@ instance/
 /site
 docs/_build/
 
+# Swagger/OpenAPI
+openapi-schema.yml
+swagger-ui/
+
 # PyBuilder
 .pybuilder/
 target/
