@@ -20,6 +20,7 @@ urlpatterns = [
     path('transactions/', include('apps.transactions.urls_pages')),
 
     # API v1 endpoints
+    path('api/v1/', include('apps.core.urls')),  # Health checks (must be first)
     path('api/v1/auth/', include('apps.accounts.urls')),
     path('api/v1/transactions/', include('apps.transactions.urls')),
     path('api/v1/categories/', include('apps.categories.urls')),

@@ -3,6 +3,7 @@ Development settings.
 """
 
 from .base import *
+import os
 
 DEBUG = True
 
@@ -25,13 +26,27 @@ INSTALLED_APPS += [
     'django.contrib.admindocs',
 ]
 
-# Database - SQLite для разработки
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Database - use PostgreSQL if POSTGRES_HOST is set (Docker), otherwise SQLite
+if os.getenv('POSTGRES_HOST'):
+    # Docker environment - use PostgreSQL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'fin_db'),
+            'USER': os.getenv('POSTGRES_USER', 'fin_user'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'fin_password'),
+            'HOST': os.getenv('POSTGRES_HOST', 'postgres'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        }
     }
-}
+else:
+    # Local development - use SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Logging for development
 LOGGING = {

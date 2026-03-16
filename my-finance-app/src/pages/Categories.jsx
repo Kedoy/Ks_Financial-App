@@ -344,7 +344,7 @@ export default function Categories() {
                     style={{ backgroundColor: `${selectedCategory.color}20` }}
                   >
                     <i
-                      className={`fas ${selectedCategory.icon || 'fa-tag'}`}
+                      className={`fas fa-${selectedCategory.icon || 'tag'}`}
                       style={{ color: selectedCategory.color }}
                     ></i>
                   </div>
@@ -464,7 +464,7 @@ function CategoryCard({ category, onEdit, onViewTransactions, deletePendingId, o
             style={{ backgroundColor: `${category.color}20` }}
           >
             <i
-              className={`fas ${category.icon || 'fa-tag'}`}
+              className={`fas fa-${category.icon || 'tag'}`}
               style={{ color: category.color }}
             ></i>
           </div>

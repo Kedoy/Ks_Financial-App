@@ -2,7 +2,7 @@ from django.db import models
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from apps.categories.models import Category
 from apps.categories.serializers import (
@@ -15,7 +15,7 @@ from apps.categories.serializers import (
 class CategoryViewSet(viewsets.ModelViewSet):
     """
     CRUD для категорий.
-    
+
     list: GET /api/v1/categories/
     create: POST /api/v1/categories/
     retrieve: GET /api/v1/categories/{id}/
@@ -23,18 +23,33 @@ class CategoryViewSet(viewsets.ModelViewSet):
     destroy: DELETE /api/v1/categories/{id}/
     """
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['type', 'is_system']
+
+    def get_permissions(self):
+        """
+        Разрешаем доступ к list и system без аутентификации.
+        """
+        if self.action in ['list', 'system', 'my']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         """
         Возвращаем системные категории + категории пользователя.
         """
-        user = self.request.user
-        return Category.objects.filter(
-            models.Q(is_system=True) | models.Q(user=user)
-        ).select_related('user').prefetch_related('transactions').distinct()
+        user = self.request.user if hasattr(self.request, 'user') else None
+        
+        if user and user.is_authenticated:
+            # Авторизованный пользователь: системные + свои
+            return Category.objects.filter(
+                models.Q(is_system=True) | models.Q(user=user)
+            ).select_related('user').distinct()
+        else:
+            # Неавторизованный: только системные
+            return Category.objects.filter(
+                is_system=True
+            ).select_related('user').distinct()
 
     def get_serializer_class(self):
         if self.action == 'create':
