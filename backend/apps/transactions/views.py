@@ -22,7 +22,7 @@ from apps.transactions.services.category_suggester import suggest_category
 class TransactionViewSet(viewsets.ModelViewSet):
     """
     CRUD для транзакций.
-    
+
     list: GET /api/v1/transactions/
     create: POST /api/v1/transactions/
     retrieve: GET /api/v1/transactions/{id}/
@@ -36,9 +36,20 @@ class TransactionViewSet(viewsets.ModelViewSet):
     ordering = ['-date']
 
     def get_queryset(self):
-        return Transaction.objects.filter(user=self.request.user).select_related(
+        queryset = Transaction.objects.filter(user=self.request.user).select_related(
             'category'
         )
+        
+        # Фильтрация по датам из query параметров
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        
+        if start_date:
+            queryset = queryset.filter(date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+        
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'create':

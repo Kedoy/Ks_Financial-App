@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Use environment variable for API base URL, default to proxy path
 const API_BASE = import.meta.env.VITE_API_URL 
   ? `${import.meta.env.VITE_API_URL}/api/v1`
   : '/api/v1';
@@ -10,7 +9,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Интерцептор для добавления токена
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   console.log('[API Interceptor] Request:', config.url, 'Token exists:', !!token);
@@ -22,8 +20,6 @@ api.interceptors.request.use((config) => {
     console.warn('[API Interceptor] No access token found for request:', config.url);
   }
 
-  // Не устанавливаем Content-Type вручную для FormData
-  // браузер установит его автоматически с boundary
   if (!(config.data instanceof FormData)) {
     config.headers['Content-Type'] = 'application/json';
   }
@@ -31,7 +27,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Интерцептор для обработки ошибок
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -73,6 +68,14 @@ export const categoriesAPI = {
 export const analyticsAPI = {
   summary: (days = 30) => api.get('/analytics/summary/', { params: { days } }),
   aiInsights: (days = 30) => api.get('/analytics/ai-insights/', { params: { days } }),
+  forecast: (type = 'daily', period = 30, category = null, useCache = true) => 
+    api.get('/analytics/forecast/', { params: { type, period, category, use_cache: useCache } }),
+  forecastSummary: (category = null) => {
+    const params = {};
+    if (category) params.category = category;
+    return api.get('/analytics/forecast/summary/', { params });
+  },
+  categoryForecasts: (period = 30) => api.get('/analytics/forecast/categories/', { params: { period } }),
 };
 
 export const blogAPI = {
@@ -86,7 +89,6 @@ export const blogAPI = {
       if (data.image) {
         formData.append('image', data.image);
       }
-      // Для FormData заголовок Content-Type устанавливается браузером автоматически
       return api.post('/blog/posts/', formData);
     },
     get: (id) => api.get(`/blog/posts/${id}/`),
@@ -98,7 +100,6 @@ export const blogAPI = {
       if (data.image) {
         formData.append('image', data.image);
       }
-      // Для FormData заголовок Content-Type устанавливается браузером автоматически
       return api.put(`/blog/posts/${id}/`, formData);
     },
     delete: (id) => api.delete(`/blog/posts/${id}/`),
@@ -110,9 +111,7 @@ export const blogAPI = {
   profile: {
     get: () => api.get('/auth/profile/'),
     update: (data) => {
-      // data может быть FormData или обычным объектом
       if (data instanceof FormData) {
-        // Для FormData заголовок Content-Type устанавливается браузером автоматически (с boundary)
         return api.put('/auth/profile/', data);
       }
       return api.put('/auth/profile/', data, { headers: { 'Content-Type': 'application/json' } });

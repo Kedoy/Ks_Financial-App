@@ -10,50 +10,34 @@
 
 ---
 
-## 📖 API Документация
-
-**Swagger UI:** [https://avekedoy.github.io/Ks_Financial-App/](https://avekedoy.github.io/Ks_Financial-App/)
-
-Документация включает:
-- 📡 Полное описание всех API endpoints
-- 🔐 Примеры аутентификации и авторизации
-- 🧪 Интерактивное тестирование API прямо из браузера
-- 📊 Схемы запросов и ответов
-- 💡 Примеры использования
-
-### Локальный доступ к Swagger
-
-После запуска бэкенда откройте:
-
-- **Swagger UI:** http://localhost:8000/api/docs/
-- **ReDoc:** http://localhost:8000/api/redoc/
-- **OpenAPI Schema (YAML):** http://localhost:8000/api/schema/
-
----
-
 ## 🚀 Быстрый старт
 
-### 1. Бэкенд (Django)
+### Один скрипт для запуска всего:
 
 ```bash
-cd backend
-source venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver 0.0.0.0:8000
+cd /home/avekedoy/Ks_Financial-App
+./start.sh
 ```
 
-### 2. Фронтенд (React)
+Это запустит:
+- ✅ PostgreSQL (база данных)
+- ✅ Backend (Django на порту 8000)
+- ✅ Frontend (React на порту 5173)
+
+### Полезные команды:
 
 ```bash
-cd my-finance-app
-npm install
-npm run dev
+./start.sh --status      # Статус сервисов
+./start.sh --stop        # Остановить всё
+./start.sh --restart     # Перезапустить
+./start.sh --help        # Справка
 ```
 
-### 3. Открыть в браузере
+### Открыть в браузере:
 
 **http://localhost:5173**
+
+📖 **Подробная инструкция:** см. [HOW_TO_RUN.md](HOW_TO_RUN.md)
 
 ---
 

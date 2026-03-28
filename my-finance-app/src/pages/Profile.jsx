@@ -10,7 +10,6 @@ export default function Profile() {
     first_name: '',
     last_name: '',
     bio: '',
-    currency: 'RUB',
   });
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -31,7 +30,6 @@ export default function Profile() {
           first_name: profileData.first_name || '',
           last_name: profileData.last_name || '',
           bio: profileData.profile?.bio || '',
-          currency: profileData.profile?.currency || 'RUB',
         });
         
         if (profileData.profile?.avatar_url) {
@@ -68,7 +66,6 @@ export default function Profile() {
       // Создаём FormData для отправки с изображением
       const data = new FormData();
       data.append('bio', formData.bio || '');
-      data.append('currency', formData.currency || 'RUB');
 
       if (avatar) {
         data.append('avatar', avatar);
@@ -86,7 +83,6 @@ export default function Profile() {
         profile: {
           ...user.profile,
           bio: serverData.bio || formData.bio,
-          currency: serverData.currency || formData.currency,
           avatar_url: serverData.avatar_url || user.profile?.avatar_url
         }
       };
@@ -223,23 +219,6 @@ export default function Profile() {
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition resize-none"
               placeholder="Расскажите немного о себе..."
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Валюта
-            </label>
-            <select
-              value={formData.currency}
-              onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition"
-            >
-              <option value="RUB">₽ RUB - Российский рубль</option>
-              <option value="USD">$ USD - Доллар США</option>
-              <option value="EUR">€ EUR - Евро</option>
-              <option value="BYN">Br BYN - Белорусский рубль</option>
-              <option value="KZT">₸ KZT - Казахский тенге</option>
-            </select>
           </div>
 
           <div className="flex space-x-4 pt-4">

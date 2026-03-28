@@ -77,7 +77,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', '')
         )
-        # Создаём профиль автоматически
         Profile.objects.create(user=user)
         return user
 
@@ -93,38 +92,40 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Кастомный serializer для токенов с данными пользователя.
+    Serializer для токенов с данными пользователя.
     Позволяет использовать email вместо username для входа.
     """
-    
+
     def validate(self, attrs):
-        # Получаем email из username (так как используем email как username)
         email = attrs.get('username', '')
-        
-        # Проверяем, есть ли поле email напрямую
+
         if 'email' in attrs:
             email = attrs['email']
+
+        from django.contrib.auth import get_user_model
         
-        # Находим пользователя по email
-        from django.contrib.auth import authenticate
-        user = authenticate(
-            self.context['request'],
-            email=email,
-            password=attrs.get('password')
-        )
+        User = get_user_model()
         
-        if not user:
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
             raise ValidationError('Неверный email или пароль')
         
+        if not user.check_password(attrs.get('password')):
+            raise ValidationError('Неверный email или пароль')
+        
+        if not user.is_active:
+            raise ValidationError('Аккаунт не активен')
+
         # Получаем токены
         refresh = self.get_token(user)
-        
+
         data = {
             'access_token': str(refresh.access_token),
             'refresh': str(refresh),
             'user': UserSerializer(user).data
         }
-        
+
         return data
 
 

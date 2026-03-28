@@ -4,7 +4,13 @@ import { Chart as ChartJS } from 'chart.js';
 
 ChartJS.register(ArcElement, Tooltip);
 
-export default function CategoryPieChart({ categoryStats, visibleCategories, onToggleCategory, onToggleAll }) {
+export default function CategoryPieChart({ 
+  categoryStats, 
+  visibleCategories, 
+  onToggleCategory, 
+  onToggleAll,
+  onCategoryClick 
+}) {
   if (!categoryStats?.by_category?.length) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-gray-500">
@@ -54,6 +60,13 @@ export default function CategoryPieChart({ categoryStats, visibleCategories, onT
                     return `${context.label}: ${value.toFixed(2)} ₽ (${percentage}%)`;
                   }
                 }
+              }
+            },
+            onClick: (event, elements) => {
+              if (elements.length > 0 && onCategoryClick) {
+                const index = elements[0].index;
+                const categoryName = filteredCategories[index].category;
+                onCategoryClick(categoryName);
               }
             },
           }}

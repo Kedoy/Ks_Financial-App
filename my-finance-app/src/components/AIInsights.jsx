@@ -19,11 +19,9 @@ export default function AIInsights({ days = 30 }) {
       setInsights(response.data.insights || []);
       setSummary(response.data.summary);
       
-      // Проверяем, есть ли ошибка в ответе
       if (response.data.insights?.length > 0 && response.data.insights[0]?.category === 'Ошибка подключения') {
         setError(response.data.insights[0].insight);
       } else if (forceRefresh && response.data.insights?.length === 0) {
-        // Если после принудительного обновления всё ещё пусто
         setError('AI не смог проанализировать данные. Попробуйте позже.');
       }
     } catch (err) {

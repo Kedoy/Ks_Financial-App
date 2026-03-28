@@ -6,7 +6,6 @@ export default function PostCard({ post, onLike, onDelete, onEdit }) {
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState([]);
 
-  // Load comments when opening
   useEffect(() => {
     if (showComments && comments.length === 0) {
       loadComments();

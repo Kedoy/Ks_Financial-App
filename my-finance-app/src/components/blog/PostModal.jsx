@@ -10,7 +10,6 @@ export default function PostModal({ isOpen, onClose, onSubmit, editingPost }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Populate form when editing
   useEffect(() => {
     if (editingPost) {
       setFormData({

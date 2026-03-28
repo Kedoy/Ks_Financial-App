@@ -5,9 +5,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from apps.transactions.models import Transaction
 from apps.core.services.openrouter_service import openrouter_service
+from apps.analytics.services.forecast_service import forecast_service
 import os
 
 
@@ -239,3 +240,152 @@ class AIInsightsView(APIView):
             print('[AIInsights] Error response cached for 5 minutes')
 
         return Response(result)
+
+
+class ExpenseForecastView(APIView):
+    """
+    Прогноз расходов на основе Prophet.
+    GET /api/v1/analytics/forecast/?type=daily&period=30&category=5
+    
+    Parameters:
+        type: Тип прогноза (daily, weekly, monthly)
+        period: Период прогноза в днях (7, 14, 30, 60, 90, 180)
+        category: ID категории (опционально)
+        use_cache: Использовать кэш (true/false)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        forecast_type = request.query_params.get('type', 'daily')
+        period_days = int(request.query_params.get('period', 30))
+        category_id = request.query_params.get('category', None)
+        use_cache = request.query_params.get('use_cache', 'true').lower() == 'true'
+        
+        # Валидация параметров
+        valid_types = ['daily', 'weekly', 'monthly']
+        if forecast_type not in valid_types:
+            return Response({
+                'success': False,
+                'error': f'Неверный тип прогноза. Допустимые: {", ".join(valid_types)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        valid_periods = [7, 14, 30, 60, 90, 180]
+        if period_days not in valid_periods:
+            return Response({
+                'success': False,
+                'error': f'Неверный период. Допустимые: {valid_periods}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Получаем прогноз
+        forecast_result = forecast_service.forecast_expenses(
+            user_id=request.user.id,
+            forecast_type=forecast_type,
+            period_days=period_days,
+            category_id=int(category_id) if category_id else None,
+            use_cache=use_cache
+        )
+        
+        if not forecast_result.get('success'):
+            return Response(forecast_result, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response(forecast_result)
+
+
+class ForecastSummaryView(APIView):
+    """
+    Краткая сводка прогноза для дашборда.
+    GET /api/v1/analytics/forecast/summary/?category=5
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        category_id = request.query_params.get('category', None)
+        
+        # Получаем прогноз на 30 дней
+        forecast_result = forecast_service.forecast_expenses(
+            user_id=request.user.id,
+            forecast_type='daily',
+            period_days=30,
+            category_id=int(category_id) if category_id else None,
+            use_cache=True
+        )
+        
+        if not forecast_result.get('success'):
+            return Response({
+                'success': False,
+                'forecast_available': False,
+                'message': forecast_result.get('error', 'Прогноз недоступен')
+            })
+        
+        # Формируем краткую сводку
+        summary = forecast_result.get('summary', {})
+        trend = forecast_result.get('trend', {})
+        
+        return Response({
+            'success': True,
+            'forecast_available': True,
+            'next_30_days': {
+                'total_predicted': summary.get('total_predicted', 0),
+                'average_daily': summary.get('average_daily', 0),
+                'trend': trend.get('direction', 'stable'),
+                'trend_change': trend.get('change_percent', 0),
+            },
+            'confidence': {
+                'lower_bound': summary.get('lower_bound', 0),
+                'upper_bound': summary.get('upper_bound', 0),
+                'level': summary.get('confidence_level', 95),
+            },
+            'model_info': forecast_result.get('model_info', {})
+        })
+
+
+class CategoryForecastsView(APIView):
+    """
+    Прогнозы по всем категориям с расходами.
+    GET /api/v1/analytics/forecast/categories/?period=30
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        period_days = int(request.query_params.get('period', 30))
+        
+        from apps.categories.models import Category
+        
+        # Получаем все категории пользователя с расходами
+        categories = Category.objects.filter(
+            transactions__user=request.user,
+            transactions__type='expense'
+        ).distinct()
+        
+        forecasts = []
+        
+        for category in categories:
+            # Получаем прогноз для категории
+            forecast_result = forecast_service.forecast_expenses(
+                user_id=request.user.id,
+                forecast_type='daily',
+                period_days=period_days,
+                category_id=category.id,
+                use_cache=True
+            )
+            
+            if forecast_result.get('success'):
+                forecasts.append({
+                    'category': {
+                        'id': category.id,
+                        'name': category.name,
+                        'color': category.color,
+                        'icon': category.icon,
+                    },
+                    'forecast': forecast_result.get('summary', {}),
+                    'trend': forecast_result.get('trend', {}),
+                })
+        
+        # Сортируем по сумме прогноза
+        forecasts.sort(key=lambda x: x['forecast'].get('total_predicted', 0), reverse=True)
+        
+        return Response({
+            'success': True,
+            'period_days': period_days,
+            'categories': forecasts
+        })

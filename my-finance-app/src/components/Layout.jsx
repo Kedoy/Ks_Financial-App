@@ -68,10 +68,7 @@ export default function Layout() {
                 <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-xl">₽</span>
                 </div>
-                <div>
-                  <span className="text-lg font-bold text-gray-900 block leading-tight">Финансовый</span>
-                  <span className="text-sm text-gray-600 block -mt-1">Помощник</span>
-                </div>
+                <span className="text-lg font-bold text-gray-900">Финансовый Помощник</span>
               </Link>
 
               {/* Навигация */}

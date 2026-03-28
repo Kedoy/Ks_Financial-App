@@ -19,16 +19,23 @@ export function useAnalyticsData(transactionType, timePeriod, selectedDate) {
     async function loadData() {
       setLoading(true);
       try {
-        const allRes = await transactionsAPI.list({
+        // Get date range for selected period
+        const date = new Date(selectedDate);
+        const { startDate, endDate } = getDateRange(date, timePeriod);
+
+        // Load transactions for selected period only
+        const res = await transactionsAPI.list({
           type: transactionType,
+          start_date: startDate,
+          end_date: endDate,
           limit: 1000
         });
-        const allTransactions = allRes.data.results || [];
-        const total = allTransactions.reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
+        const transactions = res.data.results || [];
+        const total = transactions.reduce((sum, tx) => sum + parseFloat(tx.amount), 0);
 
-        // Group by category
+        // Group by category for selected period only
         const byCategory = {};
-        allTransactions.forEach(tx => {
+        transactions.forEach(tx => {
           const catName = tx.category_name || 'Без категории';
           const categoryColor = tx.category_color;
 
@@ -55,19 +62,7 @@ export function useAnalyticsData(transactionType, timePeriod, selectedDate) {
         }).sort((a, b) => b.amount - a.amount);
 
         setCategoryStats({ by_category: categories });
-        setSummary({ total, count: allTransactions.length });
-
-        // Load data for chart based on time period
-        const date = new Date(selectedDate);
-        const { startDate, endDate } = getDateRange(date, timePeriod);
-
-        const res = await transactionsAPI.list({
-          type: transactionType,
-          start_date: startDate,
-          end_date: endDate,
-          limit: 1000
-        });
-        const transactions = res.data.results || [];
+        setSummary({ total, count: transactions.length });
 
         // Prepare chart data
         const chartData = prepareChartData(transactions, timePeriod, date);

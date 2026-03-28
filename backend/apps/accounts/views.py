@@ -47,7 +47,7 @@ class LoginView(TokenObtainPairView):
     """
     Вход пользователя с установкой Refresh Token в Cookie.
     POST /api/v1/auth/login/
-    
+
     Body:
     {
         "email": "user@example.com",
@@ -62,10 +62,24 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
+        # Используем наш кастомный serializer напрямую
+        serializer = self.serializer_class(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        
+        # Получаем данные из serializer
+        data = serializer.validated_data
+        
+        # Формируем ответ
+        response = Response({
+            'access_token': data['access_token'],
+            'user': data['user']
+        })
 
         # Устанавливаем Refresh Token в HttpOnly Cookie
-        refresh_token = response.data.get('refresh')
+        refresh_token = data.get('refresh')
         if refresh_token:
             response.set_cookie(
                 key='refresh_token',
@@ -76,8 +90,6 @@ class LoginView(TokenObtainPairView):
                 max_age=7 * 24 * 60 * 60,  # 7 дней
                 path='/api/v1/auth/refresh/'
             )
-            # Удаляем refresh из тела ответа для безопасности
-            response.data.pop('refresh', None)
 
         return response
 

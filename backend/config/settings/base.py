@@ -247,3 +247,45 @@ SPECTACULAR_SETTINGS = {
 # AI Settings
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434')
 LLM_MODEL = os.getenv('LLM_MODEL', 'llama2')
+
+# Redis Cache Settings
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_DB = int(os.getenv('REDIS_DB', 0))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', None)
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'default-cache',
+        'TIMEOUT': 300,
+    },
+    'redis': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'PASSWORD': REDIS_PASSWORD,
+            'SOCKET_CONNECT_TIMEOUT': 5,
+            'SOCKET_TIMEOUT': 5,
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+                'retry_on_timeout': True,
+            },
+            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+        },
+        'TIMEOUT': 3600,
+        'KEY_PREFIX': 'ks_financial',
+    }
+}
+
+# Cache settings for forecasts
+FORECAST_CACHE_TTL = {
+    'daily': 3600,      # 1 hour
+    'weekly': 7200,     # 2 hours
+    'monthly': 14400,   # 4 hours
+}
+
+# Session cache (optional - use Redis for sessions in production)
+# SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+# SESSION_CACHE_ALIAS = 'redis'
