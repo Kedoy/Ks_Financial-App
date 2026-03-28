@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Optional, Dict, List, Any
 
+import pandas as pd
 import redis
 from django.conf import settings
 from django.utils import timezone
